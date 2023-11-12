@@ -794,6 +794,10 @@ async def getLeaderboard(
         return PlainTextResponse("Invalid time period", status_code=400)
     return JSONResponse(output, status_code=200)
 
+@app.get("/version", tags=["TEST"])
+async def getVersion():
+    return API_VERSION
+
 @app.get("/test", tags=["TEST"])
 async def test(
     username: str = Query(..., title="Throne Username", description="Username of the Throne user"),
