@@ -16,7 +16,7 @@ jobs:
       - name: Get Version
         id: get_version
         run: |
-          version=$(grep -oP "API_VERSION = '\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
+          version=$(grep -oP "API_VERSION = \"\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
           echo "Version: $version"
           echo "$version" > version
           
