@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 import requests
 
-API_VERSION = "1.6.3"
+API_VERSION = "0.1.0"
 
 app = FastAPI(
     title="ThroneAPI",

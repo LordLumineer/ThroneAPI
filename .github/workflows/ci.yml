@@ -28,7 +28,6 @@ jobs:
       - name: Uvicorn Run for Test
         run: |
             uvicorn ThroneAPI:app --host 0.0.0.0 --port 8000 --reload &
-            sleep 5  # Wait for FastAPI to start
 
       - name: Get Current Version
         id: get_current_version
@@ -36,7 +35,13 @@ jobs:
 
       - name: Get Previous Version
         id: get_previous_version
-        run: echo "::set-output name=version::$(git show origin/main:FastAPI.py | grep -oP "API_VERSION = '\K[0-9.]+" )"
+        run: |
+          PREVIOUS_VERSION=$(git show origin/main:FastAPI.py | grep -oP "API_VERSION = '\K[0-9.]+" )
+          if [ -z "$PREVIOUS_VERSION" ]; then
+            echo "::set-output name=version::0.0.0"  # Set a default version for the first commit
+          else
+            echo "::set-output name=version::$PREVIOUS_VERSION"
+          fi
 
       - name: Compare Versions
         id: compare_versions
