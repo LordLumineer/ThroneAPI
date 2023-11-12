@@ -31,19 +31,21 @@ jobs:
 
       - name: Get Current Version
         id: get_current_version
-        run: echo "::set-output name=version::$(curl http://localhost:8000/version)"
+        run: echo "CURRENT_VERSION=$(curl http://localhost:8000/version)" >current_version
 
       - name: Get Previous Version
         id: get_previous_version
-        run: echo "::set-output name=version::$(git show origin/main:ThroneAPI.py | grep -oP "API_VERSION = '\K[0-9.]+" || echo "0.0.0")"
+        run: echo "PREVIOUS_VERSION=$(git show origin/main:ThroneAPI.py | grep -oP "API_VERSION = '\K[0-9.]+" || echo "0.0.0")" >previous_version
 
       - name: Compare Versions
         id: compare_versions
         run: |
           pip install semantic_version
-          echo "Current Version: ${{ steps.get_current_version.outputs.version }}"
-          echo "Previous Version: ${{ steps.get_previous_version.outputs.version }}"
-          python -c "from semantic_version import Version; import sys; sys.exit(0 if Version('${{ steps.get_current_version.outputs.version }}') > Version('${{ steps.get_previous_version.outputs.version }}') else 1)"
+          current_version=$(cat current_version)
+          previous_version=$(cat previous_version)
+          echo "Current Version: $current_version"
+          echo "Previous Version: $previous_version"
+          python -c "from semantic_version import Version; import sys; sys.exit(0 if Version($current_version) > Version($previous_version) else 1)"
       
       - name: Check Version Comparison Result
         run: |
