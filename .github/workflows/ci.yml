@@ -43,9 +43,9 @@ jobs:
           pip install semantic_version
           current_version=$(cat current_version)
           previous_version=$(cat previous_version)
-          echo "Current Version: $current_version"
-          echo "Previous Version: $previous_version"
-          python -c "from semantic_version import Version; import sys; sys.exit(0 if Version($current_version) > Version($previous_version) else 1)"
+          echo "Current Version: '$current_version'"
+          echo "Previous Version: '$previous_version'"
+          python -c "from semantic_version import Version; import sys; sys.exit(0 if Version('$current_version') > Version('$previous_version') else 1)"
       
       - name: Check Version Comparison Result
         run: |
