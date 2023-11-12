@@ -36,7 +36,8 @@ jobs:
       - name: Get Previous Version
         id: get_previous_version
         run: |
-          PREVIOUS_VERSION=$(git show origin/main:ThroneAPI.py | grep -oP "API_VERSION = '\K[0-9.]+" )
+          git fetch origin
+          PREVIOUS_VERSION=$(git show origin/main:ThroneAPI.py | grep -oP "API_VERSION = '\K[0-9.]+")
           if [ -z "$PREVIOUS_VERSION" ]; then
             echo "::set-output name=version::0.0.0"  # Set a default version for the first commit
           else
