@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.12
+    
+      - name: update pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Uvicorn Run for Test
+        run: |
+            uvicorn ThroneAPI:app --host 0.0.0.0 --port 8000 --reload & echo $! > uvicorn_pid
+
+      - name: Get Current Version
+        id: get_current_version
+        run: echo "CURRENT_VERSION=$(curl http://localhost:8000/version)" >> $GITHUB_ENV
+
+      - name: Get Previous Version
+        id: get_previous_version
+        run: echo "PREVIOUS_VERSION=$(git show origin/main:ThroneAPI.py | grep -oP "API_VERSION = '\K[0-9.]+" || echo "0.0.0")" >> $GITHUB_ENV
+
+      - name: Compare Versions
+        id: compare_versions
+        run: |
+          pip install semantic_version
+          current_version=${{ env.CURRENT_VERSION }}
+          previous_version=${{ env.PREVIOUS_VERSION }}
+          echo "Current Version: $current_version"
+          echo "Previous Version: $previous_version"
+          python -c "from semantic_version import Version; import sys; sys.exit(0 if Version('${{ env.CURRENT_VERSION }}') > Version('${{ env.PREVIOUS_VERSION }}') else 1)"
+      
+      - name: Check Version Comparison Result
+        run: |
+          if [ ${{ steps.compare_versions.outcome }} == "failure" ]; then
+            echo "Error: Current version is not superior to the previous version."
+            exit 1
+          fi
+
+      - name: Test Throne data
+        run: |
+          test_result=$(curl http://localhost:8000/test?username=lordlumineer) # Perform a request to /test
+
+          if [ "$test_result" == "false" ]; then
+            echo "Test failed: /test returned false"
+            exit 1
+          fi
+
+      - name: End Uvicorn Run
+        run: |
+          uvicorn_pid=$(cat uvicorn_pid)
+          kill $uvicorn_pid || true # Kill the Uvicorn process if it's still running, ignore errors
+      
+      - name: Test Docker Build
+        run: |
+          docker-compose build
+
+      - name: Test Docker Up
+        run: |
+          docker-compose up -d
+          sleep 5
+
+      - name: Test Docker
+        run: |
+          test_result=$(curl http://localhost:8000/test?username=lordlumineer) # Perform a request to /test
+
+          if [ "$test_result" == "false" ]; then
+            echo "Test failed: /test returned false"
+            exit 1
+          fi
+      - name: Stop Docker
+        run: |
+          docker-compose down
