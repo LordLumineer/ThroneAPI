@@ -27,7 +27,7 @@ jobs:
 
       - name: Uvicorn Run for Test
         run: |
-            uvicorn ThroneAPI:app --host 0.0.0.0 --port 8000 --reload &
+            uvicorn ThroneAPI:app --host 0.0.0.0 --port 8000 --reload & echo $! > uvicorn_pid
 
       - name: Get Current Version
         id: get_current_version
@@ -63,7 +63,8 @@ jobs:
 
       - name: End Uvicorn Run
         run: |
-          kill $! # Kill the Uvicorn process
+          uvicorn_pid=$(cat uvicorn_pid)
+          kill $uvicorn_pid || true # Kill the Uvicorn process if it's still running, ignore errors
       
       - name: Test Docker Build
         run: |
