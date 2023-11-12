@@ -13,13 +13,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
+      - name: Get Version
+        id: get_version
+        run: |
+          version=$(git show origin/main:ThroneAPI.py | grep -oP "API_VERSION = '\K[0-9.]+" || echo "0.0.0")
+          echo "Version: $version"
+          echo "::set-output name=version::$version"
+
       - name: Login to DockerHub
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-      
 
       - name: Build and Push Docker Image
         run: |
-          version=$(git show origin/main:ThroneAPI.py | grep -oP "API_VERSION = '\K[0-9.]+" || echo "0.0.0")
-          docker build -t lordlumineer/throne-api:latest .
-          docker tag lordlumineer/throne-api:latest lordlumineer/throne-api:$version
+          version=${{ steps.get_version.outputs.version }}
+          docker build -t lordlumineer/throne-api:latest -t lordlumineer/throne-api:${version} .
           docker push lordlumineer/throne-api:latest
+          docker push lordlumineer/throne-api:${version}
