@@ -41,6 +41,7 @@ jobs:
       - name: Compare Versions
         id: compare_versions
         run: |
+          pip install semantic_version
           python -c "from semantic_version import Version; import sys; sys.exit(0 if Version('${{ steps.get_current_version.outputs.version }}') > Version('${{ steps.get_previous_version.outputs.version }}') else 1)"
       
       - name: Check Version Comparison Result
