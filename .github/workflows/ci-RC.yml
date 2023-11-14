@@ -19,7 +19,7 @@ jobs:
           python-version: 3.12
 
       - name: check origin
-        run: echo "origin= $(git remote get-url origin)"
+        run: echo "origin= $(git ls-remote origin)"
     
       - name: update pip
         run: python -m pip install --upgrade pip
