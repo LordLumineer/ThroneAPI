@@ -6,7 +6,7 @@ on:
       - RC
 
 jobs:
-  publish-RC:
+  publish-Release-Candidate:
     runs-on: ubuntu-latest
 
     steps:
