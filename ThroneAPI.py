@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from datetime import datetime
 import json
 import requests
+from pythonping import ping
 
 API_VERSION = "1.0.0"
 DOCS_URL = "/"
@@ -1491,375 +1492,467 @@ async def get_total(
         return HTTPException(status_code=500, detail=error_message)
 
 
-@app.get("/gifters/latest", tags=["Gifters"], responses={
-    200: {
-        "content": {
-            "application/json": {
-                "example": [
-                    {
-                        "username": "...",
-                        "image": "https://thronecdn.com/users/...",
-                        "latestGift": {
-                            "name": "...",
-                            "purchasedAt": "YYYY-MM-DD hh:mm:ss",
-                            "status": "shipped",
-                            "isComplete": False,
-                            "isDigital": False,
-                            "isCrowdfunded": False,
-                            "<local currency>_total": {
-                                "currency": "...",
-                                "price": 2,
-                                "fees": 0,
-                                "subTotal": 0,
-                                "shipping": 1,
-                                "total": 0
+@app.get("/gifters/latest", tags=["Gifters"],
+    responses={
+        200: {
+            "description": "Successful response with information about the latest gifters",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "username": "...",
+                            "image": "https://thronecdn.com/users/...",
+                            "latestGift": {
+                                "name": "...",
+                                "purchasedAt": "YYYY-MM-DD hh:mm:ss",
+                                "status": "shipped",
+                                "isComplete": False,
+                                "isDigital": False,
+                                "isCrowdfunded": False,
+                                "local_currency_total": {
+                                    "currency": "...",
+                                    "price": 2,
+                                    "fees": 0,
+                                    "subTotal": 0,
+                                    "shipping": 1,
+                                    "total": 0
+                                },
+                                "usd_total": {
+                                    "currency": "USD",
+                                    "price": 2,
+                                    "fees": 0,
+                                    "subTotal": 0,
+                                    "shipping": 1,
+                                    "total": 0
+                                },
+                                "display_currency_total": {
+                                    "currency": "<displayCurrency>",
+                                    "price": 2,
+                                    "fees": 0,
+                                    "subTotal": 0,
+                                    "shipping": 1,
+                                    "total": 0
+                                },
+                                "id": "25aef500-c235-4eac-87bb-0f1ba90b08ed",
                             },
-                            "usd_total": {
-                                "currency": "USD",
-                                "price": 2,
-                                "fees": 0,
-                                "subTotal": 0,
-                                "shipping": 1,
-                                "total": 0
-                            },
-                            "id": "25aef500-c235-4eac-87bb-0f1ba90b08ed",
-                            "eur_total": {
-                                "price": 2,
-                                "fees": 0,
-                                "subtotal": 0,
-                                "shipping": 1,
-                                "total": 0
+                            "summary": {
+                                "nbGifts": 7,
+                                "usd_price": 91.36645258000001,
+                                "usd_fees": 8.92413275,
+                                "usd_subtotal": 100.29058533,
+                                "usd_shipping": 36.12115824,
+                                "usd_total": 136.41174357,
+                                "display_currency_price": 1,
+                                "display_currency_fees": 1,
+                                "display_currency_subtotal": 2,
+                                "display_currency_shipping": 1,
+                                "display_currency_total": 3
                             }
-                        },
-                        "summary": {
-                            "nbGifts": 7,
-                            "usd_price": 91.36645258000001,
-                            "usd_fees": 8.92413275,
-                            "usd_subtotal": 100.29058533,
-                            "usd_shipping": 36.12115824,
-                            "usd_total": 136.41174357,
-                            "eur_price": 85.51899961488002,
-                            "eur_fees": 8.352988254000001,
-                            "eur_subtotal": 93.87198786888,
-                            "eur_shipping": 33.80940411264,
-                            "eur_total": 127.68139198152001
                         }
-                    }
-                ]
+                    ]
+                }
             }
-        }
-    }
-})
-async def getLatestGifter(
-    username: str = Query(..., title="Throne Username",
+        },
+        500: {
+            "description": "Error response when there is an issue with the request",
+            "content": {"text/plain": {"example": "Throne API Error: Unable to retrieve information about the latest gifters"}},
+        },
+    },
+)
+async def get_latest_gifter(
+    username: str = Query(..., title="Throne Username", 
                           description="Username of the Throne user"),
-    displayCurrency: str = Query(None, title="Display Currency",
+    displayCurrency: str = Query(None, title="Display Currency", 
                                  description="Additional currency to display the value in"),
 ):
-    data = await get_cleaned(username)
-    previousGifts = json.loads(data.body.decode("utf-8"))["previousGifts"]
-    latestGift = previousGifts[0]
-    for gift in previousGifts:
-        if datetime.fromtimestamp(gift["purchasedAt"]/1000) > datetime.fromtimestamp(latestGift["purchasedAt"]/1000):
-            latestGift = gift
-    output = []
-    for gifter in latestGift["customizations"]["customers"]:
-        gifter = {
-            "username": gifter["customerUsername"],
-            "image": gifter["customerImage"],
-            "latestGift": {
-                "name": latestGift["name"],
-                "purchasedAt": datetime.fromtimestamp(gift["purchasedAt"]/1000).strftime("%Y-%m-%d %H:%M:%S"),
-                "status": gift["status"],
-                "isComplete": gift["isComplete"],
-                "isDigital": gift["isDigitalGood"],
-                "isCrowdfunded": gift["isCrowdfunded"],
-                f"{gift['total']['currency'].lower()}_total": {
-                    "currency": gift["total"]["currency"],
-                    "price": gift["total"]["price"]/100,
-                    "fees": 0 if not gift["total"]["fees"] else gift["total"]["fees"]/100,
-                    "subTotal": 0 if not gift["total"]["subTotal"] else gift["total"]["subTotal"]/100,
-                    "shipping": gift["total"]["shipping"]/100,
-                    "total": 0 if not gift["total"]["total"] else gift["total"]["total"]/100,
-                },
-                f"{gift['totalUsd']['currency'].lower()}_total": {
-                    "currency": gift["totalUsd"]["currency"],
-                    "price": gift["totalUsd"]["price"]/100,
-                    "fees": 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100,
-                    "subTotal": 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100,
-                    "shipping": gift["totalUsd"]["shipping"]/100,
-                    "total": 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100,
-                },
-                "id": gift["id"],
-            }
-        }
-        nbGifts = 0
-        price = 0
-        fees = 0
-        subtotal = 0
-        shipping = 0
-        total = 0
-        for gift in previousGifts:
-            isGifter = False
-            for _gifter in gift["customizations"]["customers"]:
-                if _gifter["customerUsername"] == gifter["username"]:
-                    isGifter = True
-                    break
-            if isGifter:
-                nbGifts += 1
-                price += gift["totalUsd"]["price"]/100
-                fees += 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100
-                subtotal += 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100
-                shipping += gift["totalUsd"]["shipping"]/100
-                total += 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100
-        gifter["summary"] = {
-            "nbGifts": nbGifts,
-            "usd_price": price,
-            "usd_fees": fees,
-            "usd_subtotal": subtotal,
-            "usd_shipping": shipping,
-            "usd_total": total,
-        }
-        if displayCurrency:
-            gifter["latestGift"][f"{displayCurrency.lower()}_total"] = {
-                "price": await currency_converter(gifter["latestGift"]["usd_total"]["price"], "USD", displayCurrency.upper()),
-                "fees": await currency_converter(gifter["latestGift"]["usd_total"]["fees"], "USD", displayCurrency.upper()),
-                "subtotal": await currency_converter(gifter["latestGift"]["usd_total"]["subTotal"], "USD", displayCurrency.upper()),
-                "shipping": await currency_converter(gifter["latestGift"]["usd_total"]["shipping"], "USD", displayCurrency.upper()),
-                "total": await currency_converter(gifter["latestGift"]["usd_total"]["total"], "USD", displayCurrency.upper())
-            }
+    """
+    Retrieve information about the latest gifters, including details about their latest gift and a summary of their gift history.
 
-            gifter["summary"][f"{displayCurrency.lower()}_price"] = await currency_converter(price, "USD", displayCurrency.upper())
-            gifter["summary"][f"{displayCurrency.lower()}_fees"] = await currency_converter(fees, "USD", displayCurrency.upper())
-            gifter["summary"][f"{displayCurrency.lower()}_subtotal"] = await currency_converter(subtotal, "USD", displayCurrency.upper())
-            gifter["summary"][f"{displayCurrency.lower()}_shipping"] = await currency_converter(shipping, "USD", displayCurrency.upper())
-            gifter["summary"][f"{displayCurrency.lower()}_total"] = await currency_converter(total, "USD", displayCurrency.upper())
-        output.append(gifter)
-    return JSONResponse(output, status_code=200)
+    Parameters:
+    - `username` (str): The username of the Throne user.
+    - `displayCurrency` (str, optional): Additional currency to display the value in.
 
+    Returns:
+    - JSONResponse: A JSON response with information about the latest gifters.
+    - HTTPException: An exception with a 500 status code and an error message if there is an issue with the request.
+    """
+    try:
+        previous_gifts = json.loads((await get_cleaned(username)).body.decode("utf-8"))["previousGifts"]
+        latest_gift = max(previous_gifts, key=lambda gift: gift["purchasedAt"])
 
-@app.get("/gifters/last20", tags=["Gifters"], responses={
-    200: {
-        "content": {
-            "application/json": {
-                "example": [
-                    {
-                        "username": "...",
-                        "purchasedAt": "YYYY-MM-DD hh:mm:ss",
-                        "image": "https://thronecdn.com/users/..."
+        output = []
+        for gifter in latest_gift["customizations"]["customers"]:
+            gifter_info = {
+                "username": gifter["customerUsername"],
+                "image": gifter["customerImage"],
+                "latestGift": {
+                    "name": latest_gift["name"],
+                    "purchasedAt": datetime.fromtimestamp(latest_gift["purchasedAt"]/1000).strftime("%Y-%m-%d %H:%M:%S"),
+                    "status": latest_gift["status"],
+                    "isComplete": latest_gift["isComplete"],
+                    "isDigital": latest_gift["isDigitalGood"],
+                    "isCrowdfunded": latest_gift["isCrowdfunded"],
+                    "local_currency_total": {
+                        "currency": latest_gift["total"]["currency"],
+                        "price": latest_gift["total"]["price"]/100,
+                        "fees": 0 if not latest_gift["total"]["fees"] else latest_gift["total"]["fees"]/100,
+                        "subTotal": 0 if not latest_gift["total"]["subTotal"] else latest_gift["total"]["subTotal"]/100,
+                        "shipping": latest_gift["total"]["shipping"]/100,
+                        "total": 0 if not latest_gift["total"]["total"] else latest_gift["total"]["total"]/100,
                     },
-                    "..."
-                ]
+                    "usd_total": {
+                        "currency": latest_gift["totalUsd"]["currency"],
+                        "price": latest_gift["totalUsd"]["price"]/100,
+                        "fees": 0 if not latest_gift["totalUsd"]["fees"] else latest_gift["totalUsd"]["fees"]/100,
+                        "subTotal": 0 if not latest_gift["totalUsd"]["subTotal"] else latest_gift["totalUsd"]["subTotal"]/100,
+                        "shipping": latest_gift["totalUsd"]["shipping"]/100,
+                        "total": 0 if not latest_gift["totalUsd"]["total"] else latest_gift["totalUsd"]["total"]/100,
+                    },
+                    "display_currency_total": {
+                        "currency": displayCurrency.upper(),
+                        "price": await currency_converter(latest_gift["totalUsd"]["price"]/100, "USD", displayCurrency.upper()),
+                        "fees": 0 if not latest_gift["totalUsd"]["fees"] else await currency_converter(latest_gift["totalUsd"]["fees"]/100, "USD", displayCurrency.upper()),
+                        "subTotal": 0 if not latest_gift["totalUsd"]["subTotal"] else await currency_converter(latest_gift["totalUsd"]["subTotal"]/100, "USD", displayCurrency.upper()),
+                        "shipping": await currency_converter(latest_gift["totalUsd"]["shipping"]/100, "USD", displayCurrency.upper()),
+                        "total": 0 if not latest_gift["totalUsd"]["total"] else await currency_converter(latest_gift["totalUsd"]["total"]/100, "USD", displayCurrency.upper()),
+                    },
+                    "id": latest_gift["id"]
+                }
             }
-        }
-    }
-})
-async def getLast20Gifters(
-    username: str = Query(..., title="Throne Username",
+
+            summary_info = {
+                "nbGifts": 0,
+                "usd_price": 0,
+                "usd_fees": 0,
+                "usd_subtotal": 0,
+                "usd_shipping": 0,
+                "usd_total": 0,
+            }
+            for gift in previous_gifts:
+                is_gifter = any(_gifter["customerUsername"] == gifter_info["username"] for _gifter in gift["customizations"]["customers"])
+                if is_gifter:
+                    summary_info["nbGifts"] += 1
+                    summary_info["usd_price"] += gift["totalUsd"]["price"]/100
+                    summary_info["usd_fees"] += 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100
+                    summary_info["usd_subtotal"] += 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100
+                    summary_info["usd_shipping"] += gift["totalUsd"]["shipping"]/100
+                    summary_info["usd_total"] += 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100
+
+            gifter_info["summary"] = summary_info
+
+            if displayCurrency:
+                gifter_info["latestGift"]["display_currency_total"] = {
+                    "price": await currency_converter(gifter_info["latestGift"]["usd_total"]["price"], "USD", displayCurrency.upper()),
+                    "fees": await currency_converter(gifter_info["latestGift"]["usd_total"]["fees"], "USD", displayCurrency.upper()),
+                    "subTotal": await currency_converter(gifter_info["latestGift"]["usd_total"]["subTotal"], "USD", displayCurrency.upper()),
+                    "shipping": await currency_converter(gifter_info["latestGift"]["usd_total"]["shipping"], "USD", displayCurrency.upper()),
+                    "total": await currency_converter(gifter_info["latestGift"]["usd_total"]["total"], "USD", displayCurrency.upper())
+                }
+
+                gifter_info["summary"][f"{displayCurrency.lower()}_price"] = await currency_converter(summary_info["usd_price"], "USD", displayCurrency.upper())
+                gifter_info["summary"][f"{displayCurrency.lower()}_fees"] = await currency_converter(summary_info["usd_fees"], "USD", displayCurrency.upper())
+                gifter_info["summary"][f"{displayCurrency.lower()}_subtotal"] = await currency_converter(summary_info["usd_subtotal"], "USD", displayCurrency.upper())
+                gifter_info["summary"][f"{displayCurrency.lower()}_shipping"] = await currency_converter(summary_info["usd_shipping"], "USD", displayCurrency.upper())
+                gifter_info["summary"][f"{displayCurrency.lower()}_total"] = await currency_converter(summary_info["usd_total"], "USD", displayCurrency.upper())
+
+            output.append(gifter_info)
+
+        return JSONResponse(output, status_code=200)
+
+    except Exception as e:
+        error_message = f"Throne API Error: Unable to retrieve information about the latest gifters. {str(e)}"
+        return HTTPException(status_code=500, detail=error_message)
+
+
+@app.get("/gifters/last20", tags=["Gifters"],
+    responses={
+        200: {
+            "description": "Successful response with information about the last 20 gifters",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "username": "...",
+                            "purchasedAt": "YYYY-MM-DD hh:mm:ss",
+                            "image": "https://thronecdn.com/users/..."
+                        },
+                        "..."
+                    ]
+                }
+            }
+        },
+        500: {
+            "description": "Error response when there is an issue with the request",
+            "content": {"text/plain": {"example": "Throne API Error: Unable to retrieve information about the last 20 gifters"}},
+        },
+    },
+)
+async def get_last_20_gifters(
+    username: str = Query(..., title="Throne Username", 
                           description="Username of the Throne user"),
 ):
-    data = await get_cleaned(username)
-    last20 = json.loads(data.body.decode(
-        "utf-8"))["leaderboard"]["lastTwentyGifters"]
-    output = []
-    for gifter in last20:
-        output.append({
-            "username": gifter["gifterUsername"],
-            "purchasedAt": datetime.fromtimestamp(gifter["purchasedAt"]/1000).strftime("%Y-%m-%d %H:%M:%S"),
-            "image": gifter["gifterImage"],
-        })
-    return JSONResponse(output, status_code=200)
+    """
+    Retrieve information about the last 20 gifters, including their username, the timestamp of their latest gift, and their profile image.
+
+    Parameters:
+    - `username` (str): The username of the Throne user.
+
+    Returns:
+    - JSONResponse: A JSON response with information about the last 20 gifters.
+    - HTTPException: An exception with a 500 status code and an error message if there is an issue with the request.
+    """
+    try:
+        last_20_gifters = json.loads((await get_cleaned(username)).body.decode("utf-8"))["leaderboard"]["lastTwentyGifters"]
+        output = []
+        for gifter in last_20_gifters:
+            output.append({
+                "username": gifter["gifterUsername"],
+                "purchasedAt": datetime.fromtimestamp(gifter["purchasedAt"]/1000).strftime("%Y-%m-%d %H:%M:%S"),
+                "image": gifter["gifterImage"],
+            })
+
+        return JSONResponse(output, status_code=200)
+
+    except Exception as e:
+        error_message = f"Throne API Error: Unable to retrieve information about the last 20 gifters. {str(e)}"
+        return HTTPException(status_code=500, detail=error_message)
 
 
-@app.get("/gifters/all", tags=["Gifters"], responses={
-    200: {
-        "content": {
-            "application/json": {
-                "example": [
-                    {
-                        "username": "...",
-                        "image": "https://thronecdn.com/users/...",
+@app.get("/gifters/all", tags=["Gifters"],
+    responses={
+        200: {
+            "description": "Successful response with information about all gifters",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "username": "...",
+                            "image": "https://thronecdn.com/users/...",
+                            "latestGift": {
+                                "name": "...",
+                                "purchasedAt": "YYYY-MM-DD hh:mm:ss",
+                                "status": "delivered",
+                                "isComplete": False,
+                                "isDigital": False,
+                                "isCrowdfunded": False,
+                                "<local currency>_total": {
+                                    "currency": "...",
+                                    "price": 2,
+                                    "fees": 1,
+                                    "subTotal": 3,
+                                    "shipping": 1,
+                                    "total": 4
+                                },
+                                "usd_total": {
+                                    "currency": "USD",
+                                    "price": 2,
+                                    "fees": 1,
+                                    "subTotal": 3,
+                                    "shipping": 1,
+                                    "total": 4
+                                },
+                                "id": "..."
+                            },
+                            "summary": {
+                                "nbGifts": 2,
+                                "usd_price": 4,
+                                "usd_fees": 2,
+                                "usd_subtotal": 6,
+                                "usd_shipping": 2,
+                                "usd_total": 8
+                            }
+                        },
+                        "..."
+                    ]
+                }
+            }
+        },
+        500: {
+            "description": "Error response when there is an issue with the request",
+            "content": {"text/plain": {"example": "Throne API Error: Unable to retrieve information about all gifters"}},
+        },
+    },
+)
+async def get_all_gifters(
+    username: str = Query(..., title="Throne Username", 
+                          description="Username of the Throne user"),
+):
+    """
+    Retrieve information about all gifters, including their username, profile image, and details about their latest gift.
+
+    Parameters:
+    - `username` (str): The username of the Throne user.
+
+    Returns:
+    - JSONResponse: A JSON response with information about all gifters.
+    - HTTPException: An exception with a 500 status code and an error message if there is an issue with the request.
+    """
+    try:
+        previous_gifts = json.loads((await get_cleaned(username)).body.decode("utf-8"))["previousGifts"]
+
+        output = {}
+        for gift in previous_gifts:
+            for gifter in gift["customizations"]["customers"]:
+                if gifter["customerUsername"] not in list(output.keys()):
+                    output[gifter["customerUsername"]] = {
+                        "username": gifter["customerUsername"],
+                        "image": gifter["customerImage"],
                         "latestGift": {
-                            "name": "...",
-                            "purchasedAt": "YYYY-MM-DD hh:mm:ss",
-                            "status": "delivered",
-                            "isComplete": False,
-                            "isDigital": False,
-                            "isCrowdfunded": False,
-                            "<local currency>_total": {
-                                "currency": "...",
-                                "price": 2,
-                                "fees": 1,
-                                "subTotal": 3,
-                                "shipping": 1,
-                                "total": 4
+                            "name": gift["name"],
+                            "purchasedAt": datetime.fromtimestamp(gift["purchasedAt"]/1000).strftime("%Y-%m-%d %H:%M:%S"),
+                            "status": gift["status"],
+                            "isComplete": gift["isComplete"],
+                            "isDigital": gift["isDigitalGood"],
+                            "isCrowdfunded": gift["isCrowdfunded"],
+                            f"{gift['total']['currency'].lower()}_total": {
+                                "currency": gift["total"]["currency"],
+                                "price": gift["total"]["price"]/100,
+                                "fees": 0 if not gift["total"]["fees"] else gift["total"]["fees"]/100,
+                                "subTotal": 0 if not gift["total"]["subTotal"] else gift["total"]["subTotal"]/100,
+                                "shipping": gift["total"]["shipping"]/100,
+                                "total": 0 if not gift["total"]["total"] else gift["total"]["total"]/100,
                             },
-                            "usd_total": {
-                                "currency": "USD",
-                                "price": 2,
-                                "fees": 1,
-                                "subTotal": 3,
-                                "shipping": 1,
-                                "total": 4
+                            f"{gift['totalUsd']['currency'].lower()}_total": {
+                                "currency": gift["totalUsd"]["currency"],
+                                "price": gift["totalUsd"]["price"]/100,
+                                "fees": 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100,
+                                "subTotal": 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100,
+                                "shipping": gift["totalUsd"]["shipping"]/100,
+                                "total": 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100,
                             },
-                            "id": "..."
+                            "id": gift["id"],
                         },
                         "summary": {
-                            "nbGifts": 2,
-                            "usd_price": 4,
-                            "usd_fees": 2,
-                            "usd_subtotal": 6,
-                            "usd_shipping": 2,
-                            "usd_total": 8
-                        }
-                    },
-                    "..."
-                ]
-            }
-        }
-    }
-})
-async def getAllGifters(
-    username: str = Query(..., title="Throne Username",
-                          description="Username of the Throne user"),
-):
-    data = await get_cleaned(username)
-    previousGifts = json.loads(data.body.decode("utf-8"))["previousGifts"]
-    output = {}
-    for gift in previousGifts:
-        for gifter in gift["customizations"]["customers"]:
-            if gifter["customerUsername"] not in list(output.keys()):
-                output[gifter["customerUsername"]] = {
-                    "username": gifter["customerUsername"],
-                    "image": gifter["customerImage"],
-                    "latestGift": {
-                        "name": gift["name"],
-                        "purchasedAt": datetime.fromtimestamp(gift["purchasedAt"]/1000).strftime("%Y-%m-%d %H:%M:%S"),
-                        "status": gift["status"],
-                        "isComplete": gift["isComplete"],
-                        "isDigital": gift["isDigitalGood"],
-                        "isCrowdfunded": gift["isCrowdfunded"],
-                        f"{gift['total']['currency'].lower()}_total": {
-                            "currency": gift["total"]["currency"],
-                            "price": gift["total"]["price"]/100,
-                            "fees": 0 if not gift["total"]["fees"] else gift["total"]["fees"]/100,
-                            "subTotal": 0 if not gift["total"]["subTotal"] else gift["total"]["subTotal"]/100,
-                            "shipping": gift["total"]["shipping"]/100,
-                            "total": 0 if not gift["total"]["total"] else gift["total"]["total"]/100,
+                            "nbGifts": 1,
+                            "usd_price": gift["totalUsd"]["price"]/100,
+                            "usd_fees": 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100,
+                            "usd_subtotal": 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100,
+                            "usd_shipping": gift["totalUsd"]["shipping"]/100,
+                            "usd_total": 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100,
                         },
-                        f"{gift['totalUsd']['currency'].lower()}_total": {
-                            "currency": gift["totalUsd"]["currency"],
-                            "price": gift["totalUsd"]["price"]/100,
-                            "fees": 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100,
-                            "subTotal": 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100,
-                            "shipping": gift["totalUsd"]["shipping"]/100,
-                            "total": 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100,
-                        },
-                        "id": gift["id"],
-                    },
-                    "summary": {
-                        "nbGifts": 1,
-                        "usd_price": gift["totalUsd"]["price"]/100,
-                        "usd_fees": 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100,
-                        "usd_subtotal": 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100,
-                        "usd_shipping": gift["totalUsd"]["shipping"]/100,
-                        "usd_total": 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100,
-                    },
-                }
-            else:
-                output[gifter["customerUsername"]]["summary"]["nbGifts"] += 1
-                output[gifter["customerUsername"]
-                       ]["summary"]["usd_price"] += gift["totalUsd"]["price"]/100
-                output[gifter["customerUsername"]
-                       ]["summary"]["usd_fees"] += 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100
-                output[gifter["customerUsername"]
-                       ]["summary"]["usd_subtotal"] += 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100
-                output[gifter["customerUsername"]
-                       ]["summary"]["usd_shipping"] += gift["totalUsd"]["shipping"]/100
-                output[gifter["customerUsername"]
-                       ]["summary"]["usd_total"] += 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100
-                if datetime.strptime(output[gifter["customerUsername"]]["latestGift"]["purchasedAt"], "%Y-%m-%d %H:%M:%S") < datetime.fromtimestamp(gift["purchasedAt"]/1000):
-                    output[gifter["customerUsername"]]["latestGift"] = {
-                        "name": gift["name"],
-                        "purchasedAt": datetime.fromtimestamp(gift["purchasedAt"]/1000).strftime("%Y-%m-%d %H:%M:%S"),
-                        "status": gift["status"],
-                        "isComplete": gift["isComplete"],
-                        "isDigital": gift["isDigitalGood"],
-                        "isCrowdfunded": gift["isCrowdfunded"],
-                        f"{gift['total']['currency'].lower()}_total": {
-                            "currency": gift["total"]["currency"],
-                            "price": gift["total"]["price"]/100,
-                            "fees": 0 if not gift["total"]["fees"] else gift["total"]["fees"]/100,
-                            "subTotal": 0 if not gift["total"]["subTotal"] else gift["total"]["subTotal"]/100,
-                            "shipping": gift["total"]["shipping"]/100,
-                            "total": 0 if not gift["total"]["total"] else gift["total"]["total"]/100,
-                        },
-                        f"{gift['totalUsd']['currency'].lower()}_total": {
-                            "currency": gift["totalUsd"]["currency"],
-                            "price": gift["totalUsd"]["price"]/100,
-                            "fees": 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100,
-                            "subTotal": 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100,
-                            "shipping": gift["totalUsd"]["shipping"]/100,
-                            "total": 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100,
-                        },
-                        "id": gift["id"],
                     }
-    return JSONResponse(list(output.values()), status_code=200)
+                else:
+                    output[gifter["customerUsername"]]["summary"]["nbGifts"] += 1
+                    output[gifter["customerUsername"]]["summary"]["usd_price"] += gift["totalUsd"]["price"]/100
+                    output[gifter["customerUsername"]]["summary"]["usd_fees"] += 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100
+                    output[gifter["customerUsername"]]["summary"]["usd_subtotal"] += 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100
+                    output[gifter["customerUsername"]]["summary"]["usd_shipping"] += gift["totalUsd"]["shipping"]/100
+                    output[gifter["customerUsername"]]["summary"]["usd_total"] += 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100
+                    
+                    if datetime.strptime(output[gifter["customerUsername"]]["latestGift"]["purchasedAt"], "%Y-%m-%d %H:%M:%S") < datetime.fromtimestamp(gift["purchasedAt"]/1000):
+                        output[gifter["customerUsername"]]["latestGift"] = {
+                            "name": gift["name"],
+                            "purchasedAt": datetime.fromtimestamp(gift["purchasedAt"]/1000).strftime("%Y-%m-%d %H:%M:%S"),
+                            "status": gift["status"],
+                            "isComplete": gift["isComplete"],
+                            "isDigital": gift["isDigitalGood"],
+                            "isCrowdfunded": gift["isCrowdfunded"],
+                            f"{gift['total']['currency'].lower()}_total": {
+                                "currency": gift["total"]["currency"],
+                                "price": gift["total"]["price"]/100,
+                                "fees": 0 if not gift["total"]["fees"] else gift["total"]["fees"]/100,
+                                "subTotal": 0 if not gift["total"]["subTotal"] else gift["total"]["subTotal"]/100,
+                                "shipping": gift["total"]["shipping"]/100,
+                                "total": 0 if not gift["total"]["total"] else gift["total"]["total"]/100,
+                            },
+                            f"{gift['totalUsd']['currency'].lower()}_total": {
+                                "currency": gift["totalUsd"]["currency"],
+                                "price": gift["totalUsd"]["price"]/100,
+                                "fees": 0 if not gift["totalUsd"]["fees"] else gift["totalUsd"]["fees"]/100,
+                                "subTotal": 0 if not gift["totalUsd"]["subTotal"] else gift["totalUsd"]["subTotal"]/100,
+                                "shipping": gift["totalUsd"]["shipping"]/100,
+                                "total": 0 if not gift["totalUsd"]["total"] else gift["totalUsd"]["total"]/100,
+                            },
+                            "id": gift["id"],
+                        }
+
+        return JSONResponse(list(output.values()), status_code=200)
+
+    except Exception as e:
+        error_message = f"Throne API Error: Unable to retrieve information about all gifters. {str(e)}"
+        return HTTPException(status_code=500, detail=error_message)
 
 
-@app.get("/gifters/leaderboard", tags=["Gifters"], responses={
-    200: {
-        "content": {
-            "application/json": {
-                "example": [
-                    {
-                        "username": "Anonymous",
-                        "nbGifts": 4,
-                        "usd_total": 16,
-                        "image": None
-                    },
-                    "..."
-                ]
+@app.get("/gifters/leaderboard", tags=["Gifters"],
+    responses={
+        200: {
+            "description": "Successful response with information about gifters and their leaderboard position",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "username": "Anonymous",
+                            "nbGifts": 4,
+                            "usd_total": 16,
+                            "image": None
+                        },
+                        "..."
+                    ]
+                }
             }
-        }
-    }
-})
-async def getLeaderboard(
-    username: str = Query(..., title="Throne Username",
-                          description="Username of the Throne user"),
-    time: str = Query(..., description="Select a period to display", enum=[
-                      "all", "month", "week"]),
+        },
+        400: {
+            "description": "Bad request response when an invalid time period is provided",
+            "content": {"text/plain": {"example": "Invalid time period"}},
+        },
+        500: {
+            "description": "Error response when there is an issue with the request",
+            "content": {"text/plain": {"example": "Throne API Error: Unable to retrieve leaderboard information"}},
+        },
+    },
+)
+async def get_leaderboard(
+    username: str = Query(..., title="Throne Username", description="Username of the Throne user"),
+    time: str = Query(..., description="Select a period to display", enum=["all", "month", "week"]),
 ):
-    data = await get_cleaned(username)
-    leaderboard = json.loads(data.body.decode("utf-8"))["leaderboard"]
-    output = []
-    if time == "all":
-        for gifter in leaderboard["leaderboardAllTime"]:
-            output.append({
-                "username": gifter["gifterUsername"],
-                "nbGifts": gifter["totalPaymentNumber"],
-                "usd_total": gifter["totalAmountSpentUSD"]/100,
-                "image": gifter["gifterImage"],
-            })
-    elif time == "month":
-        for gifter in leaderboard["leaderboardLastMonth"]:
-            output.append({
-                "username": gifter["gifterUsername"],
-                "nbGifts": gifter["totalPaymentNumber"],
-                "usd_total": gifter["totalAmountSpentUSD"]/100,
-                "image": gifter["gifterImage"],
-            })
-    elif time == "week":
-        for gifter in leaderboard["leaderboardLastWeek"]:
-            output.append({
-                "username": gifter["gifterUsername"],
-                "nbGifts": gifter["totalPaymentNumber"],
-                "usd_total": gifter["totalAmountSpentUSD"]/100,
-                "image": gifter["gifterImage"],
-            })
-    else:
-        return PlainTextResponse("Invalid time period", status_code=400)
-    return JSONResponse(output, status_code=200)
+    """
+    Retrieve information about gifters and their leaderboard position based on the specified time period.
+
+    Parameters:
+    - `username` (str): The username of the Throne user.
+    - `time` (str): The time period for displaying the leaderboard (options: "all", "month", "week").
+
+    Returns:
+    - JSONResponse: A JSON response with information about gifters and their leaderboard position.
+    - PlainTextResponse: A response with a 400 status code and an error message if an invalid time period is provided.
+    - HTTPException: An exception with a 500 status code and an error message if there is an issue with the request.
+    """
+    try:
+        leaderboard = json.loads((await get_cleaned(username)).body.decode("utf-8"))["leaderboard"]
+        output = []
+
+        if time == "all":
+            for gifter in leaderboard["leaderboardAllTime"]:
+                output.append({
+                    "username": gifter["gifterUsername"],
+                    "nbGifts": gifter["totalPaymentNumber"],
+                    "usd_total": gifter["totalAmountSpentUSD"]/100,
+                    "image": gifter["gifterImage"],
+                })
+        elif time == "month":
+            for gifter in leaderboard["leaderboardLastMonth"]:
+                output.append({
+                    "username": gifter["gifterUsername"],
+                    "nbGifts": gifter["totalPaymentNumber"],
+                    "usd_total": gifter["totalAmountSpentUSD"]/100,
+                    "image": gifter["gifterImage"],
+                })
+        elif time == "week":
+            for gifter in leaderboard["leaderboardLastWeek"]:
+                output.append({
+                    "username": gifter["gifterUsername"],
+                    "nbGifts": gifter["totalPaymentNumber"],
+                    "usd_total": gifter["totalAmountSpentUSD"]/100,
+                    "image": gifter["gifterImage"],
+                })
+        else:
+            return PlainTextResponse("Invalid time period", status_code=400)
+
+        return JSONResponse(output, status_code=200)
+
+    except Exception as e:
+        error_message = f"Throne API Error: Unable to retrieve leaderboard information. {str(e)}"
+        return HTTPException(status_code=500, detail=error_message)
 
 
 @app.get("/version", tags=["TEST"], responses={
@@ -1871,33 +1964,86 @@ async def getLeaderboard(
         }
     }
 })
-async def getVersion():
+async def get_version():
     return API_VERSION
 
 
-@app.get("/test", tags=["TEST"], responses={
-    200: {
-        "content": {
-            "application/json": {
-                "example": True
-            }
-        }
-    }
-})
+@app.get("/test", tags=["TEST"], responses={200: {"content": {"application/json": {"example": True}}}})
 async def test(
-    username: str = Query(..., title="Throne Username",
-                          description="Username of the Throne user"),
-    displayCurrency: str = Query(None, title="Display Currency",
-                                 description="Additional currency to display the value in")
+    username: str = Query(..., title="Throne Username", description="Username of the Throne user"),
+    display_currency: str = Query(None, title="Display Currency", description="Additional currency to display the value in")
 ):
     try:
+        # Assuming get_cleaned and currency_converter are asynchronous functions
         data = await get_cleaned(username)
         data = json.loads(data.body.decode("utf-8"))
-        if displayCurrency:
-            test = await currency_converter(1, "USD", displayCurrency.upper())
+
+        if display_currency:
+            # Assuming currency_converter is an asynchronous function
+            test_conversion = await currency_converter(1, "USD", display_currency.upper())
+
         return True
-    except:
+    except Exception as e:
+        print(f"An error occurred: {e}")
         return False
+
+
+@app.get("/ping/throne", tags=["TEST"],
+    responses={200: {"description": "Ping information for throne.com", "content": {"application/json": {"example": {
+        "verbose": "Reply from throne.com, 4 packets, avg time=10.0 ms",
+        "details": {
+            "responses": ["Response 1", "Response 2", "Response 3", "Response 4"],
+            "packets_sent": 4,
+            "packets_returned": 4,
+            "rtt_avg": 10.0,
+            "rtt_min": 9.0,
+            "rtt_max": 11.0,
+        },
+        "averagePingTime": 10.0,
+    }}}}},
+)
+async def ping_throne():
+    """
+    Perform a ping to throne.com and return information about the response time.
+
+    Returns:
+        JSONResponse: Ping information including verbose response, details, and average ping time.
+    """
+    try:
+        host = "throne.com"
+        response = ping(host, count=4)
+
+        PingInfo = {
+            "verbose": "",
+            "details": {
+                "responses": [],
+                "packets_sent": 0,
+                "packets_returned": 0,
+                "rtt_avg": 0,
+                "rtt_min": 0,
+                "rtt_max": 0,
+            },
+            "averagePingTime": 0
+        }
+        if (
+            response.rtt_avg is not None
+            and response.stats.packets_returned > 0
+            and (response.stats.packets_sent - response.stats.packets_returned) == 0
+            and response.success()
+        ):
+            PingInfo["verbose"] = f"Reply from {host}, {response.stats.packets_returned} packets, avg time={response.rtt_avg_ms} ms"
+            for val in response._responses:
+                PingInfo["details"]["responses"].append(val.__str__())
+            PingInfo["details"]["packets_sent"] = response.stats.packets_sent
+            PingInfo["details"]["packets_returned"] = response.stats.packets_returned
+            PingInfo["details"]["rtt_avg"] = response.rtt_avg
+            PingInfo["details"]["rtt_min"] = response.rtt_min
+            PingInfo["details"]["rtt_max"] = response.rtt_max
+            PingInfo["averagePingTime"] = response.rtt_avg_ms
+            return JSONResponse(content=PingInfo, media_type="application/json")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
 async def currency_converter(amount, from_currency, to_currency):
