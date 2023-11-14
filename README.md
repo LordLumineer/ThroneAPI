@@ -1,6 +1,4 @@
-<img src="./images/fullLogoSideTxtRBGB.svg" width="200" alt="fullLogoSideTxtRBGB">
-
-# ThroneAPI
+# ThroneAPI <img src="./images/SVG/rgbb.svg" height="40" alt="fullLogoSideTxtRBGB">
 
 ThroneAPI is a FastAPI-based API for retrieving information about the Throne wishlist. It provides endpoints to fetch various details such as raw wishlist data, user information, collections, items, previous gifts, and more.
 
@@ -235,20 +233,20 @@ You can find ThroneAPI on Docker Hub for easy deployment. Follow the instruction
 
 ## 3. Logos
 
-<img src="./images/fullLogoBW.svg" width="200" alt="fullLogoBW">
-<img src="./images/fullLogoWB.svg" width="200" alt="fullLogoWB">
-<img src="./images/fullLogoRBGB.svg" width="200" alt="fullLogoRBGB">
-<img src="./images/fullLogoRBGW.svg" width="200" alt="fullLogoRBGW">
+<img src="./images/SVG/bwb.svg" width="100" alt="fullLogoBW">
+<img src="./images/SVG/bww.svg" width="100" alt="fullLogoWB">
+<img src="./images/SVG/rgbb.svg" width="100" alt="fullLogoRBGB">
+<img src="./images/SVG/rgbw.svg" width="100" alt="fullLogoRBGW">
 
-<img src="./images/fullLogoTxtBW.svg" width="200" alt="fullLogoTxtBW">
-<img src="./images/fullLogoTxtWB.svg" width="200" alt="fullLogoTxtWB">
-<img src="./images/fullLogoTxtRBGB.svg" width="200" alt="fullLogoTxtRBGB">
-<img src="./images/fullLogoTxtRBGW.svg" width="200" alt="fullLogoTxtRBGW">
+<img src="./images/SVG/bwbB.svg" width="100" alt="fullLogoTxtBW">
+<img src="./images/SVG/bwwB.svg" width="100" alt="fullLogoTxtWB">
+<img src="./images/SVG/rgbbB.svg" width="100" alt="fullLogoTxtRBGB">
+<img src="./images/SVG/rgbwB.svg" width="100" alt="fullLogoTxtRBGW">
 
-<img src="./images/fullLogoSideTxtBW.svg" width="200" alt="fullLogoSideTxtBW">
-<img src="./images/fullLogoSideTxtWB.svg" width="200" alt="fullLogoSideTxtWB">
-<img src="./images/fullLogoSideTxtRBGB.svg" width="200" alt="fullLogoSideTxtRBGB">
-<img src="./images/fullLogoSideTxtRBGW.svg" width="200" alt="fullLogoSideTxtRBGW">
+<img src="./images/SVG/bwbS.svg" width="200" alt="fullLogoSideTxtBW">
+<img src="./images/SVG/bwwS.svg" width="200" alt="fullLogoSideTxtWB">
+<img src="./images/SVG/rgbbS.svg" width="200" alt="fullLogoSideTxtRBGB">
+<img src="./images/SVG/rgbwS.svg" width="200" alt="fullLogoSideTxtRBGW">
 
 ## 4. Issues
 
