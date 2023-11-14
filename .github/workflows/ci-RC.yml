@@ -1,12 +1,12 @@
-name: CI/CD Prpduction
+name: CI/CD Realase Candidate
 
 on:
   pull_request:
     branches:
-      - latest
+      - RC
 
 jobs:
-  test-Production:
+  test-Realease-Candidate:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,6 +17,11 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: 3.12
+
+      - name: check origin
+        run: | 
+          echo "origin= $(git remote get-url origin)"
+          echo "origin= $(git ls-remote origin)"
     
       - name: update pip
         run: python -m pip install --upgrade pip
@@ -36,9 +41,9 @@ jobs:
       - name: Get Previous Version
         id: get_previous_version
         run: |
-          git fetch origin latest
-          git checkout latest
-          version=$(git show origin/latest:ThroneAPI.py | grep -oP "API_VERSION = \"\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
+          git fetch origin RC
+          git checkout RC
+          version=$(git show origin/RC:ThroneAPI.py | grep -oP "API_VERSION = \"\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
           echo "Version: $version"
           echo "PREVIOUS_VERSION=$version" >> $GITHUB_ENV
 
