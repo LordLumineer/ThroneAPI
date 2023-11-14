@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -41,7 +41,7 @@ jobs:
       - name: Get Previous Version
         id: get_previous_version
         run: |
-          version=$(git show origin/tree/RC:ThroneAPI.py | grep -oP "API_VERSION = \"\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
+          version=$(git show origin/RC:ThroneAPI.py | grep -oP "API_VERSION = \"\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
           echo "Version: $version"
           echo "PREVIOUS_VERSION=$version" >> $GITHUB_ENV
 
