@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD Realase Candidate
 
 on:
   pull_request:
@@ -19,7 +19,9 @@ jobs:
           python-version: 3.12
 
       - name: check origin
-        run: echo "origin= $(git ls-remote origin)"
+        run: | 
+          echo "origin= $(git remote get-url origin)"
+          echo "origin= $(git ls-remote origin)"
     
       - name: update pip
         run: python -m pip install --upgrade pip
@@ -39,7 +41,7 @@ jobs:
       - name: Get Previous Version
         id: get_previous_version
         run: |
-          version=$(git show origin/RC:ThroneAPI.py | grep -oP "API_VERSION = \"\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
+          version=$(git show origin/tree/RC:ThroneAPI.py | grep -oP "API_VERSION = \"\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
           echo "Version: $version"
           echo "PREVIOUS_VERSION=$version" >> $GITHUB_ENV
 
