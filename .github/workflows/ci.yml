@@ -37,10 +37,10 @@ jobs:
       - name: Get Previous Version
         id: get_previous_version
         run: |
-          PREVIOUS_VERSION=$(grep -oP "API_VERSION = \"\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
-          echo "Version: $PREVIOUS_VERSION"
-          echo "$PREVIOUS_VERSION" >> $GITHUB_ENV
-        
+          version=$(git show origin/latest:ThroneAPI.py | grep -oP "API_VERSION = '\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
+          echo "Version: $version"
+          echo "PREVIOUS_VERSION=$version" >> $GITHUB_ENV
+
       - name: Compare Versions
         id: compare_versions
         run: |
