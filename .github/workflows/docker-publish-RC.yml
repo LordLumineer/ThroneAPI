@@ -1,12 +1,12 @@
-name: Publish Docker Image on Production
+name: Publish Docker Image on Release Candidate
 
 on:
   push:
     branches:
-      - latest
+      - RC
 
 jobs:
-  publish-Production:
+  publish-Release-Candidate:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,6 +26,5 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           version=$(cat version)
-          docker build -t lordlumineer/throne-api:latest -t lordlumineer/throne-api:${version} .
-          docker push lordlumineer/throne-api:latest
-          docker push lordlumineer/throne-api:${version}
+          docker build -t lordlumineer/throne-api:RC-${version} .
+          docker push lordlumineer/throne-api:RC-${version}
