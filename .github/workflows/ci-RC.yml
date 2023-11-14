@@ -42,6 +42,7 @@ jobs:
         id: get_previous_version
         run: |
           git fetch origin RC
+          git checkout RC
           version=$(git show origin/RC:ThroneAPI.py | grep -oP "API_VERSION = \"\K[0-9.]+" ThroneAPI.py || echo "0.0.0")
           echo "Version: $version"
           echo "PREVIOUS_VERSION=$version" >> $GITHUB_ENV
