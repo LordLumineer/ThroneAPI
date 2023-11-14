@@ -57,7 +57,7 @@ jobs:
 
       - name: Test Throne data
         run: |
-          test_result=$(curl http://localhost:8000/test?username=lordlumineer) # Perform a request to /test
+          test_result=$(curl http://localhost:8000/test?username=lordlumineer&display_currency=eur) # Perform a request to /test
 
           if [ "$test_result" == "false" ]; then
             echo "Test failed: /test returned false"
