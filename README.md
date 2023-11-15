@@ -4,15 +4,16 @@ ThroneAPI is a FastAPI-based API for retrieving information about the Throne wis
 
 ## Getting Started
 
-You can find ThroneAPI on Docker Hub for easy deployment. Follow the instructions below to get started.
+You can find ThroneAPI on [Docker Hub](https://hub.docker.com/r/lordlumineer/throne-api) for easy deployment. Follow the instructions below to get started.
 
 ## Deploy with Docker
 
    ```bash
    Copy code
    docker run -p 8000:8000 your-docker-hub-username/throne-api
-   Access the API at http://localhost:8000/docs for interactive documentation.
    ```
+
+   Access the API at [localhost:8000/docs](http://localhost:8000/docs) for interactive documentation.
 
 ---
 
@@ -229,7 +230,7 @@ You can find ThroneAPI on Docker Hub for easy deployment. Follow the instruction
 
      - **Note:** You might want to add the `--reload` flag to the command to enable hot reloading.
 
-  2. Open the Swagger UI at `http://localhost:8000`
+  2. Open the Swagger UI at [localhost:8000/docs](http://localhost:8000/docs).
 
 ## 3. Logos
 
