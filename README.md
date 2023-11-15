@@ -10,7 +10,7 @@ You can find ThroneAPI on [Docker Hub](https://hub.docker.com/r/lordlumineer/thr
 
    ```bash
    Copy code
-   docker run -p 8000:8000 your-docker-hub-username/throne-api
+   docker run -p 8000:8000 lordlumineer/throne-api
    ```
 
    Access the API at [localhost:8000/docs](http://localhost:8000/docs) for interactive documentation.
