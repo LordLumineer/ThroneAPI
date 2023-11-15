@@ -6,7 +6,7 @@ import requests
 from pythonping import ping
 
 API_VERSION = "1.0.1"
-DOCS_URL = "/"
+DOCS_URL = "/docs"
 
 app = FastAPI(
     title="ThroneAPI",
