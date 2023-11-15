@@ -9,7 +9,6 @@ You can find ThroneAPI on [Docker Hub](https://hub.docker.com/r/lordlumineer/thr
 ## Deploy with Docker
 
    ```bash
-   Copy code
    docker run -p 8000:8000 lordlumineer/throne-api
    ```
 
