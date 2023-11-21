@@ -6,11 +6,11 @@ import requests
 from pythonping import ping
 
 API_VERSION = "1.0.1"
-DOCS_URL = "/"
+DOCS_URL = "/docs"
 
 app = FastAPI(
     title="ThroneAPI",
-    description="TEST",
+    description="ThroneAPI is a FastAPI-based API for retrieving information about the Throne wishlist. It provides endpoints to fetch various details such as raw wishlist data, user information, collections, items, previous gifts, and more.",
     version=API_VERSION,
     docs_url=DOCS_URL,
 )
