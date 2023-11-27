@@ -5,7 +5,7 @@ import json
 import requests
 from pythonping import ping
 
-API_VERSION = "1.0.1"
+API_VERSION = "1.0.2"
 DOCS_URL = "/docs"
 
 app = FastAPI(
@@ -1587,6 +1587,7 @@ async def get_latest_gifter(
                 "image": gifter["customerImage"],
                 "latestGift": {
                     "name": latest_gift["name"],
+                    "id": latest_gift["id"],
                     "purchasedAt": datetime.fromtimestamp(latest_gift["purchasedAt"]/1000).strftime("%Y-%m-%d %H:%M:%S"),
                     "status": latest_gift["status"],
                     "isComplete": latest_gift["isComplete"],
@@ -1608,15 +1609,6 @@ async def get_latest_gifter(
                         "shipping": latest_gift["totalUsd"]["shipping"]/100,
                         "total": 0 if not latest_gift["totalUsd"]["total"] else latest_gift["totalUsd"]["total"]/100,
                     },
-                    "display_currency_total": {
-                        "currency": displayCurrency.upper(),
-                        "price": await currency_converter(latest_gift["totalUsd"]["price"]/100, "USD", displayCurrency.upper()),
-                        "fees": 0 if not latest_gift["totalUsd"]["fees"] else await currency_converter(latest_gift["totalUsd"]["fees"]/100, "USD", displayCurrency.upper()),
-                        "subTotal": 0 if not latest_gift["totalUsd"]["subTotal"] else await currency_converter(latest_gift["totalUsd"]["subTotal"]/100, "USD", displayCurrency.upper()),
-                        "shipping": await currency_converter(latest_gift["totalUsd"]["shipping"]/100, "USD", displayCurrency.upper()),
-                        "total": 0 if not latest_gift["totalUsd"]["total"] else await currency_converter(latest_gift["totalUsd"]["total"]/100, "USD", displayCurrency.upper()),
-                    },
-                    "id": latest_gift["id"]
                 }
             }
 
@@ -2012,7 +2004,7 @@ async def ping_throne():
     try:
         host = "throne.com"
         response = ping(host, count=4)
-
+        print(response.__dict__.keys())
         PingInfo = {
             "verbose": "",
             "details": {
@@ -2027,15 +2019,15 @@ async def ping_throne():
         }
         if (
             response.rtt_avg is not None
-            and response.stats.packets_returned > 0
-            and (response.stats.packets_sent - response.stats.packets_returned) == 0
+            and response.stats_packets_returned > 0
+            and (response.stats_packets_sent - response.stats_packets_returned) == 0
             and response.success()
         ):
-            PingInfo["verbose"] = f"Reply from {host}, {response.stats.packets_returned} packets, avg time={response.rtt_avg_ms} ms"
+            PingInfo["verbose"] = f"Reply from {host}, {response.stats_packets_returned} packets, avg time={response.rtt_avg_ms} ms"
             for val in response._responses:
                 PingInfo["details"]["responses"].append(val.__str__())
-            PingInfo["details"]["packets_sent"] = response.stats.packets_sent
-            PingInfo["details"]["packets_returned"] = response.stats.packets_returned
+            PingInfo["details"]["packets_sent"] = response.stats_packets_sent
+            PingInfo["details"]["packets_returned"] = response.stats_packets_returned
             PingInfo["details"]["rtt_avg"] = response.rtt_avg
             PingInfo["details"]["rtt_min"] = response.rtt_min
             PingInfo["details"]["rtt_max"] = response.rtt_max
